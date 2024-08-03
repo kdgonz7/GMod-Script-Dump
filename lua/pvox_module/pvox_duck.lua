@@ -5,6 +5,8 @@ PVox:ImplementModule("duck", function(ply)
 		["print_name"] = "Duck",
 		["description"] = "A duck. With 1 unique, high quality voice line.",
 		["actions"] = {
+			-- one unique voice line
+			-- QUAKCK
 			["on_ready"] = {
 				"playervox/modules/duck/quack_5.mp3",
 			},
@@ -17,6 +19,7 @@ PVox:ImplementModule("duck", function(ply)
 			["confirm_kill"] = "on_ready",
 			["reload"] = "on_ready",
 			["switchtaunt"] = "on_ready",
+			["inspect"] = "on_ready",
 		}
 	}
 end)

@@ -13,7 +13,6 @@ hook.Add("CalcViewModelView", "UnivTilt", function(weapon, vm, oldpos, oldang, p
 	local newang = angles
 	newang.p = 49
 	if ply:KeyDown(IN_LEFT) or ply:KeyDown(IN_RIGHT) then
-		print("Kt")
 		return newang, oldpos
 	end
 end)

@@ -3,7 +3,17 @@
 -- Hold CTRL + E to drag a ragdoll around
 
 local GrabWhileAlive = CreateConVar("bg_grab_while_alive", 0, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
-
+local EntBlacklist = {
+	["npc_combinedropship"] = true,
+	["npc_combinegunship"] = true,
+	["npc_helicopter"] = true,
+	["npc_strider"] = true,
+	["npc_turret_floor"] = true,
+	["npc_turret_ground"] = true,
+	["npc_turret_ceiling"] = true,
+	["npc_rollermine"] = true,
+	["npc_combine_camera"] = true
+}
 print("Body Drag loaded v0.0.1")
 
 hook.Add("KeyPress", "BodyDrag", function(ply, key)
@@ -11,7 +21,8 @@ hook.Add("KeyPress", "BodyDrag", function(ply, key)
 		local ps = ply:GetEyeTrace()
 
 		if GrabWhileAlive:GetBool() then
-			if (ps.Entity != nil and ps.Entity:GetClass() != "prop_ragdoll" and string.StartsWith(ps.Entity:GetClass(), "npc_")) then
+			if (ps.Entity != nil and ps.Entity:GetClass() != "prop_ragdoll" and string.StartsWith(ps.Entity:GetClass(), "npc_")) and ! EntBlacklist[ps.Entity:GetClass()] then
+				if ps.Entity:Health() <= 0 then return end
 				-- ragdolify the entity
 				local rag = ents.Create("prop_ragdoll")
 				rag:SetModel(ps.Entity:GetModel())
@@ -91,6 +102,8 @@ hook.Add("KeyPress", "BodyDrag", function(ply, key)
 			if rag then et.Entity = cet[1] end
 
 			local phys = et.Entity:GetPhysicsObject()
+			if ! IsValid(phys) then return end
+
 			et.Entity:SetNWBool("dragging", true)
 			et.Entity:SetNWEntity("owner", ply)
 			et.Entity:SetNWBool("thrown", false)

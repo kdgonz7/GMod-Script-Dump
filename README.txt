@@ -7,8 +7,10 @@ Garry's Mod Scripts I've made
 - Spawn Protection
 - No Drop On Death
 - Body Grabbing and Throwing
+- Player VOX
 
 Posted addons:
 
 - Body Drag / Throwing
 - Whistling
+- Player VOX

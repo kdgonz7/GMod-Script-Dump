@@ -146,3 +146,4 @@ hook.Add("CreateEntityRagdoll", "BodyDrag", function(entity, ragdoll)
 	ragdoll:SetNWBool("dragging", false)
 	ragdoll:SetNWEntity("owner", nil)
 end)
+

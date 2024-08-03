@@ -19,6 +19,7 @@ AddCSLuaFile()
 if SERVER then
 	util.AddNetworkString("PVox_Inspect")
 end
+
 if ! PVox then
 	-- for mods, this is recommended
 	-- as it lets the user know the PVOX API is not
@@ -28,13 +29,15 @@ if ! PVox then
 	Derma_Message("The PVOX Module API is not established! This could mean you do not have the PVox module installed.", "PVox Error", "OK")
 end
 
--- we're using a singular net message here,
--- there's a lot of other ways to do this
--- this is the one i found the most efficient
-net.Receive("PVox_Inspect", function(len, ply)
-	local pmod = PVox:GetModule(ply:GetNWString("vox_preset", "none"))
-	pmod:EmitAction(ply, "inspect")
-end)
+if SERVER then
+	-- we're using a singular net message here,
+	-- there's a lot of other ways to do this
+	-- this is the one i found the most efficient
+	net.Receive("PVox_Inspect", function(len, ply)
+		local pmod = PVox:GetModule(ply:GetNWString("vox_preset", "none"))
+		pmod:EmitAction(ply, "inspect")
+	end)
+end
 
 if CLIENT then
 	hook.Add("KeyPress", "PVox_Inspect", function(ply, key)

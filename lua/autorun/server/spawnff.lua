@@ -11,6 +11,8 @@ local SPAWN_REMOVE_IF_VIOLENT = CreateConVar("sgm_spawn_remove_if_violent", 0, F
 print("SpawnFF loaded v0.0.1")
 
 hook.Add("PlayerSpawn", "SpawnFF", function(ply)
+	if ply:HasGodMode() then return end
+
 	ply:GodEnable()
 
 	timer.Simple(SPAWN_COOLDOWN:GetInt(), function()

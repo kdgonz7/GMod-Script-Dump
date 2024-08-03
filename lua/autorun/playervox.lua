@@ -201,6 +201,7 @@ function PVox:ImplementModule(name, imp_func)
 
 					note("clearing old sound, overriden")
 					self:SetCachedSound(ply, "")
+					self:StopEmit(ply)
 				end
 			end
 

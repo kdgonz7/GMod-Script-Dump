@@ -45,6 +45,7 @@ if SERVER then
 	util.AddNetworkString("PVox_OpenCalloutPanel")
 	util.AddNetworkString("PVox_Callout") -- Callout(ply, calloutname)
 end
+
 PVox = PVox or {
 	Modules = {},
 	PlayerModelBinds = {},
@@ -142,7 +143,6 @@ function PVox:Mount()
 
 	note("finished loading, found " .. c .. " modules.")
 end
-
 
 --* NOTE if you're using glualint,
 --* this entire section is a bunch of warnings. ignore them.

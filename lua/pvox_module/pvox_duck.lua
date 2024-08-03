@@ -4,6 +4,11 @@ PVox:ImplementModule("duck", function(ply)
 	return {
 		["print_name"] = "Duck",
 		["description"] = "A duck. With 1 unique, high quality voice line.",
+		["callouts"] = {
+			["quack"] = {
+				"playervox/modules/duck/quack_5.mp3",
+			},
+		},
 		["actions"] = {
 			-- one unique voice line
 			-- QUAKCK

@@ -10,43 +10,45 @@ hook.Add("KeyPress", "BodyDrag", function(ply, key)
 	if key == IN_USE then
 		local ps = ply:GetEyeTrace()
 
-		if (ps.Entity != nil and ps.Entity:GetClass() != "prop_ragdoll" and string.StartsWith(ps.Entity:GetClass(), "npc_")) then
-			-- ragdolify the entity
-			local rag = ents.Create("prop_ragdoll")
-			rag:SetModel(ps.Entity:GetModel())
-			rag:SetPos(ps.HitPos)
-			rag:SetAngles(ps.HitNormal:Angle())
-			rag:Spawn()
+		if GrabWhileAlive:GetBool() then
+			if (ps.Entity != nil and ps.Entity:GetClass() != "prop_ragdoll" and string.StartsWith(ps.Entity:GetClass(), "npc_")) then
+				-- ragdolify the entity
+				local rag = ents.Create("prop_ragdoll")
+				rag:SetModel(ps.Entity:GetModel())
+				rag:SetPos(ps.HitPos)
+				rag:SetAngles(ps.HitNormal:Angle())
+				rag:Spawn()
 
-			for k, v in pairs(ps.Entity:GetBodyGroups()) do
-				rag:SetBodygroup(v.id, ps.Entity:GetBodygroup(v.id))
-			end
+				for k, v in pairs(ps.Entity:GetBodyGroups()) do
+					rag:SetBodygroup(v.id, ps.Entity:GetBodygroup(v.id))
+				end
 
-			for k, v in pairs(ps.Entity:GetMaterials()) do
-				rag:SetSubMaterial(k - 1, v)
-			end
+				for k, v in pairs(ps.Entity:GetMaterials()) do
+					rag:SetSubMaterial(k - 1, v)
+				end
 
-			-- set the bones
-			for i = 1, rag:GetPhysicsObjectCount() do
-				local bone = rag:GetPhysicsObjectNum(i - 1)
+				-- set the bones
+				for i = 1, rag:GetPhysicsObjectCount() do
+					local bone = rag:GetPhysicsObjectNum(i - 1)
 
-				if (IsValid(bone)) then
-					local pos, ang = ps.Entity:GetBonePosition(rag:TranslatePhysBoneToBone(i - 1))
+					if (IsValid(bone)) then
+						local pos, ang = ps.Entity:GetBonePosition(rag:TranslatePhysBoneToBone(i - 1))
 
-					if (pos) then
-						bone:SetPos(pos)
-						bone:SetAngles(ang)
-						bone:Wake()
+						if (pos) then
+							bone:SetPos(pos)
+							bone:SetAngles(ang)
+							bone:Wake()
+						end
 					end
 				end
+
+				rag:SetSkin(ps.Entity:GetSkin())
+				rag:Activate()
+
+				rag	:SetCollisionGroup(COLLISION_GROUP_PASSABLE_DOOR)
+
+				ps.Entity:Remove()
 			end
-
-			rag:SetSkin(ps.Entity:GetSkin())
-			rag:Activate()
-
-			rag	:SetCollisionGroup(COLLISION_GROUP_PASSABLE_DOOR)
-
-			ps.Entity:Remove()
 		end
 		-- note: this is somewhat a hacky 
 		-- note: way to allow for other ragdoll mods,

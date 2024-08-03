@@ -1,5 +1,10 @@
 AddCSLuaFile()
 
+--* this is an example project
+--* implementing a duck playermodel.
+--* this implements the duck pack, 
+--* and registers the duckie playermodel
+
 PVox:ImplementModule("duck", function(ply)
 	return {
 		["print_name"] = "Duck",

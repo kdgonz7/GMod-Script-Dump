@@ -4,12 +4,18 @@
 
 print("NewSpeed loaded v0.0.1")
 
+local EnableNewSpeed = CreateConVar("ns_enabled", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+
 local LerpC = function(a, b, time) return a + (b - a) * time end
 
 local LFAC = 0.1
 
 hook.Add("SetupMove", "ns_Spawn", function(ply, mv, cmd)
 	if ! IsValid(ply) then return end
+
+	if ! EnableNewSpeed:GetBool() then
+		return
+	end
 
 	ply:SetRunSpeed(180)
 	ply:SetWalkSpeed(100)

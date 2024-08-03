@@ -18,7 +18,6 @@
 			Combo:SetValue( "Presets" )
 
 			for k, v in pairs(PVox.Modules) do
-				print(PVox.Modules)
 				Combo:AddChoice( k )
 			end
 

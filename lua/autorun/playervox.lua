@@ -708,10 +708,9 @@ hook.Add("PlayerSpawn", "StartPlayerPresetByModel", function(ply)
 	if ! PVoxUsePlayerModelBinds:GetBool() then return end
 
 	timer.Simple(0.1, function()
+		if ply:GetNWString("vox_preset", "none") ~= "none" then return end
 		local model = ply:GetModel()
 		local pm_preset = PVox.PlayerModelBinds[model]
-
-		note("checking " .. model)
 
 		if pm_preset ~= "none" and pm_preset ~= nil then
 			ply:SendLua("notification.AddLegacy('your preset has been set to " .. pm_preset .. "', NOTIFY_GENERIC, 6)")

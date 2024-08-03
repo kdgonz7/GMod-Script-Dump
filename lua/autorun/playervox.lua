@@ -287,6 +287,46 @@ function PVox:CleanBlankModules()
 	end
 end
 
+function PVOX_LoadPresets()
+	local tb = file.Read("pvox_presets.txt")
+	if ! tb then return end
+
+	local JS = util.JSONToTable(tb)
+	if ! JS then return end
+
+	local allPlayers = player.GetAll()
+
+	for k,v in pairs(JS) do
+		local ply = player.GetBySteamID64(k)
+		if ! IsValid(ply) then continue end
+
+		ply:SetNWString("vox_preset", v)
+	end
+end
+
+function PVOX_LoadPreset(player)
+	PVOX_LoadPresets() --todo: might make this better
+end
+
+-- this is a fake member function lol
+-- it's not a part of the PVOX class, but
+-- still has the name PVOX in it
+function PVOX_SavePreset()
+	--iterate through every player
+	-- save their preset to a table
+
+	local tbl_presets = {}
+
+	for _, v in pairs(player.GetAll()) do
+		tbl_presets[v:SteamID64()] = v:GetNWString("vox_preset", "none")
+	end
+
+	local JS = util.TableToJSON(tbl_presets) -- convert to JSON
+
+	note("saved PVox Presets!")
+	file.Write("pvox_presets.txt", JS)
+end
+
 function PVox:GenerateSimilarNames(amount, common_name, ext, zeroes, prefix)
 	zeroes = zeroes or false
 	prefix = prefix or "_"
@@ -323,8 +363,6 @@ if SERVER then
 
 		local callouts = player_Module["callouts"]
 		if ! callouts then return end
-
-		print("GET CALLOUTS")
 
 		net.Start("PVox_ReceiveCallouts")
 		net.WriteString(util.TableToJSON(callouts))
@@ -653,12 +691,16 @@ concommand.Add("pvox_CalloutPanel", function(ply, cmd, args)
 	end
 end)
 
-print("PlayerVox loaded v0.0.1")
+if SERVER then
+	MsgC(Color(255, 0, 230), "[PVOX SERVER]", Color(255, 255, 255), " PlayerVox loaded v0.0.1\n")
+end
 
 if CLIENT then return end
 hook.Add("PlayerInitialSpawn", "StartPlayerValues", function(ply)
 	ply:SetNWString("vox_preset", "combinesoldier")
 	ply:SetNWBool("vox_enabled", true)
+
+	PVOX_LoadPresets()
 end)
 
 hook.Add("PlayerSpawn", "StartPlayerPresetByModel", function(ply)
@@ -808,6 +850,8 @@ hook.Add("PlayerShouldTakeDamage", "PlayerVoxPlayerShouldTakeDamage", function(p
 
 	return true
 end)
+
+hook.Add("ShutDown", "PlayerVoxSavePreset", PVOX_SavePreset)
 
 hook.Add("PlayerDeath", "PlayerVoxPlayerDeath", function(ply, inflictor, attacker)
 	if ! IsValid(ply) then return end

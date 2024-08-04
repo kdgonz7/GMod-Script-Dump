@@ -4,10 +4,12 @@
 
 util.AddNetworkString("BD_Start")
 util.AddNetworkString("BD_Throw")
+util.AddNetworkString("BD_ThrowWithGrenade")
 util.AddNetworkString("BD_Drop")
 
 local GrabWhileAlive = CreateConVar("bg_grab_while_alive", 0, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 local Enabled = CreateConVar("bg_body_drag_enabled", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+local AggressivePreset = CreateConVar("bg_preset", "hell", {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 local EntBlacklist = {
 	["npc_combinedropship"] = true,
 	["npc_combinegunship"] = true,
@@ -17,7 +19,9 @@ local EntBlacklist = {
 	["npc_turret_ground"] = true,
 	["npc_turret_ceiling"] = true,
 	["npc_rollermine"] = true,
-	["npc_combine_camera"] = true
+	["npc_combine_camera"] = true,
+	["npc_grenade_frag"] = true,
+	["npc_manhack"] = true
 }
 print("Body Drag loaded v0.0.1")
 
@@ -31,6 +35,8 @@ net.Receive("BD_Start", function(len, ply)
 	if GrabWhileAlive:GetBool() then
 		if (ps.Entity != nil and ps.Entity:GetClass() != "prop_ragdoll" and string.StartsWith(ps.Entity:GetClass(), "npc_")) and ! EntBlacklist[ps.Entity:GetClass()] then
 			if ps.Entity:Health() <= 0 then return end
+
+			print(ps.Entity:GetClass())
 			-- ragdolify the entity
 			local rag = ents.Create("prop_ragdoll")
 			rag:SetModel(ps.Entity:GetModel())
@@ -123,6 +129,18 @@ net.Receive("BD_Start", function(len, ply)
 	end
 end)
 
+local getForce = (function()
+		if AggressivePreset:GetString() == "hell" then
+			return 10000000
+		elseif AggressivePreset:GetString() == "normal" then
+			return 10000
+		elseif AggressivePreset:GetString() == "sneaky-beaky-like" then
+			return 1
+		else
+			return 0
+		end
+	end)()
+
 net.Receive("BD_Throw", function(len, ply)
 	local ent = ply:GetNWEntity("dragging", nil)
 
@@ -142,8 +160,59 @@ net.Receive("BD_Throw", function(len, ply)
 
 		phys:EnableMotion(true)
 		phys:EnableGravity(true)
-		phys:ApplyForceCenter(ply:GetAimVector() * 10000000)
-		phys:ApplyTorqueCenter(ply:GetAimVector() * Vector(100000, 100000, 100000))
+
+		local force = getForce
+
+		phys:ApplyForceCenter(ply:GetAimVector() * force)
+		phys:ApplyTorqueCenter(ply:GetAimVector() * Vector(force, force, force))
+	end
+end)
+
+net.Receive("BD_ThrowWithGrenade", function(len, ply)
+	local ent = ply:GetNWEntity("dragging", nil)
+
+	if IsValid(ent) then
+		local phys = ent:GetPhysicsObject()
+
+		ent:SetNWBool("dragging", false)
+		ent:SetNWEntity("owner", nil)
+		ply:SetNWEntity("dragging", nil)
+
+		ply:ViewPunch(Angle(math.random(-10, 10), math.random(-10, 10), 0))
+
+		-- stop player from holding down the key
+		ply:SetAnimation(PLAYER_ATTACK1)
+
+		phys:Wake()
+
+		phys:EnableMotion(true)
+		phys:EnableGravity(true)
+
+		local force = getForce
+
+		-- add a grenade
+		local grenade = ents.Create("npc_grenade_frag")
+
+		if IsValid(grenade) then
+			grenade:SetPos(ent:GetPos())
+			grenade:SetAngles(ent:GetAngles())
+			grenade:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
+			grenade:SetModel("models/weapons/w_grenade.mdl")
+
+			grenade:Fire("SetTimer", 1, 0)
+			grenade:Spawn()
+
+			-- set the damage incredibly high
+
+			local chestbone = ent:LookupBone("ValveBiped.Bip01_Spine4")
+
+			grenade:SetParent(ent, chestbone)
+			grenade:SetOwner(ply)
+
+			grenade:GetPhysicsObject():Sleep()
+		end
+		phys:ApplyForceCenter(ply:GetAimVector() * force)
+		phys:ApplyTorqueCenter(ply:GetAimVector() * Vector(force, force, force))
 	end
 end)
 

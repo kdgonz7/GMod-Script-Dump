@@ -2,7 +2,12 @@
 -- Body Drag
 -- Hold CTRL + E to drag a ragdoll around
 
+util.AddNetworkString("BD_Start")
+util.AddNetworkString("BD_Throw")
+util.AddNetworkString("BD_Drop")
+
 local GrabWhileAlive = CreateConVar("bg_grab_while_alive", 0, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
+local Enabled = CreateConVar("bg_body_drag_enabled", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY})
 local EntBlacklist = {
 	["npc_combinedropship"] = true,
 	["npc_combinegunship"] = true,
@@ -16,131 +21,135 @@ local EntBlacklist = {
 }
 print("Body Drag loaded v0.0.1")
 
-hook.Add("KeyPress", "BodyDrag", function(ply, key)
-	if key == IN_USE then
-		local ps = ply:GetEyeTrace()
+net.Receive("BD_Start", function(len, ply)
+	if ! Enabled:GetBool() then return end
 
-		if GrabWhileAlive:GetBool() then
-			if (ps.Entity != nil and ps.Entity:GetClass() != "prop_ragdoll" and string.StartsWith(ps.Entity:GetClass(), "npc_")) and ! EntBlacklist[ps.Entity:GetClass()] then
-				if ps.Entity:Health() <= 0 then return end
-				-- ragdolify the entity
-				local rag = ents.Create("prop_ragdoll")
-				rag:SetModel(ps.Entity:GetModel())
-				rag:SetPos(ps.HitPos)
-				rag:SetAngles(ps.HitNormal:Angle())
-				rag:Spawn()
+	if ply:GetNWBool("dragging", false) then return end
 
-				for k, v in pairs(ps.Entity:GetBodyGroups()) do
-					rag:SetBodygroup(v.id, ps.Entity:GetBodygroup(v.id))
-				end
+	local ps = ply:GetEyeTrace()
 
-				for k, v in pairs(ps.Entity:GetMaterials()) do
-					rag:SetSubMaterial(k - 1, v)
-				end
+	if GrabWhileAlive:GetBool() then
+		if (ps.Entity != nil and ps.Entity:GetClass() != "prop_ragdoll" and string.StartsWith(ps.Entity:GetClass(), "npc_")) and ! EntBlacklist[ps.Entity:GetClass()] then
+			if ps.Entity:Health() <= 0 then return end
+			-- ragdolify the entity
+			local rag = ents.Create("prop_ragdoll")
+			rag:SetModel(ps.Entity:GetModel())
+			rag:SetPos(ps.HitPos)
+			rag:SetAngles(ps.HitNormal:Angle())
+			rag:Spawn()
 
-				-- set the bones
-				for i = 1, rag:GetPhysicsObjectCount() do
-					local bone = rag:GetPhysicsObjectNum(i - 1)
+			for k, v in pairs(ps.Entity:GetBodyGroups()) do
+				rag:SetBodygroup(v.id, ps.Entity:GetBodygroup(v.id))
+			end
 
-					if (IsValid(bone)) then
-						local pos, ang = ps.Entity:GetBonePosition(rag:TranslatePhysBoneToBone(i - 1))
+			for k, v in pairs(ps.Entity:GetMaterials()) do
+				rag:SetSubMaterial(k - 1, v)
+			end
 
-						if (pos) then
-							bone:SetPos(pos)
-							bone:SetAngles(ang)
-							bone:Wake()
-						end
+			-- set the bones
+			for i = 1, rag:GetPhysicsObjectCount() do
+				local bone = rag:GetPhysicsObjectNum(i - 1)
+
+				if (IsValid(bone)) then
+					local pos, ang = ps.Entity:GetBonePosition(rag:TranslatePhysBoneToBone(i - 1))
+
+					if (pos) then
+						bone:SetPos(pos)
+						bone:SetAngles(ang)
+						bone:Wake()
 					end
 				end
-
-				rag:SetSkin(ps.Entity:GetSkin())
-				rag:Activate()
-
-				rag	:SetCollisionGroup(COLLISION_GROUP_PASSABLE_DOOR)
-
-				ps.Entity:Remove()
 			end
-		end
-		-- note: this is somewhat a hacky 
-		-- note: way to allow for other ragdoll mods,
-		-- note: idk why they did ragdolls like this. I guess they didn't take
-		-- note: into the fact the multiple kinds of ragdolls (server and client), I feel like ReAgdoll is
-		-- note: a client predicted esque addon, which is why using a serverside trace
-		-- note: doesn't work correct.
-		local rag = false
-		local cet = ents.FindAlongRay(ply:EyePos(), ply:EyePos() + ply:EyeAngles():Forward() * 200, ply)
 
-		if cet then
-			for k, v in pairs(cet) do
-				if v:GetClass() == "prop_ragdoll" then
-					rag = true
-					cet = {v}
-					break
-				end
+			rag:SetSkin(ps.Entity:GetSkin())
+			rag:Activate()
+
+			rag	:SetCollisionGroup(COLLISION_GROUP_PASSABLE_DOOR)
+
+			ps.Entity:Remove()
+		end
+	end
+	-- note: this is somewhat a hacky 
+	-- note: way to allow for other ragdoll mods,
+	-- note: idk why they did ragdolls like this. I guess they didn't take
+	-- note: into the fact the multiple kinds of ragdolls (server and client), I feel like ReAgdoll is
+	-- note: a client predicted esque addon, which is why using a serverside trace
+	-- note: doesn't work correct.
+	local rag = false
+	local cet = ents.FindAlongRay(ply:EyePos(), ply:EyePos() + ply:EyeAngles():Forward() * 200, ply)
+
+	if cet then
+		for k, v in pairs(cet) do
+			if v:GetClass() == "prop_ragdoll" then
+				rag = true
+				cet = {v}
+				break
 			end
-		end
-
-		local et = util.TraceLine({
-			start = ply:EyePos(),
-			endpos = ply:EyePos() + ply:EyeAngles():Forward() * 100,
-			filter = ply
-		})
-
-		if !IsValid(et.Entity) and ! rag then
-			return
-		end
-
-		local satisfied = (function()
-			if (IsValid(et.Entity)) then
-				return (et.Entity:GetClass() == "prop_ragdoll" and ! et.Entity:GetNWBool("thrown", false)) or rag
-			else
-				return rag
-			end
-		end)()
-
-		if satisfied then
-			if rag then et.Entity = cet[1] end
-
-			local phys = et.Entity:GetPhysicsObject()
-			if ! IsValid(phys) then return end
-
-			et.Entity:SetNWBool("dragging", true)
-			et.Entity:SetNWEntity("owner", ply)
-			et.Entity:SetNWBool("thrown", false)
-
-			phys:SetMass(10)
-			phys:SetDamping(0.01, 10)
-
-			ply:SetNWEntity("dragging", et.Entity)
 		end
 	end
 
-	if key == IN_ATTACK2 then -- throw
-		local ent = ply:GetNWEntity("dragging", nil)
+	local et = util.TraceLine({
+		start = ply:EyePos(),
+		endpos = ply:EyePos() + ply:EyeAngles():Forward() * 100,
+		filter = ply
+	})
 
-		if IsValid(ent) then
-			local phys = ent:GetPhysicsObject()
+	if !IsValid(et.Entity) and ! rag then
+		return
+	end
 
-			ent:SetNWBool("dragging", false)
-			ent:SetNWEntity("owner", nil)
-			ply:SetNWEntity("dragging", nil)
-
-			ply:ViewPunch(Angle(math.random(-10, 10), math.random(-10, 10), 0))
-
-			-- stop player from holding down the key
-			ply:SetAnimation(PLAYER_ATTACK1)
-
-			phys:Wake()
-
-			phys:EnableMotion(true)
-			phys:EnableGravity(true)
-			phys:ApplyForceCenter(ply:GetAimVector() * 10000000)
-			phys:ApplyTorqueCenter(ply:GetAimVector() * Vector(100000, 100000, 100000))
+	local satisfied = (function()
+		if (IsValid(et.Entity)) then
+			return (et.Entity:GetClass() == "prop_ragdoll" and ! et.Entity:GetNWBool("thrown", false)) or rag
+		else
+			return rag
 		end
+	end)()
+
+	if satisfied then
+		if rag then et.Entity = cet[1] end
+
+		local phys = et.Entity:GetPhysicsObject()
+		if ! IsValid(phys) then return end
+
+		et.Entity:SetNWBool("dragging", true)
+		et.Entity:SetNWEntity("owner", ply)
+		et.Entity:SetNWBool("thrown", false)
+
+		phys:SetMass(10)
+		phys:SetDamping(0.01, 10)
+
+		ply:SetNWEntity("dragging", et.Entity)
+	end
+end)
+
+net.Receive("BD_Throw", function(len, ply)
+	local ent = ply:GetNWEntity("dragging", nil)
+
+	if IsValid(ent) then
+		local phys = ent:GetPhysicsObject()
+
+		ent:SetNWBool("dragging", false)
+		ent:SetNWEntity("owner", nil)
+		ply:SetNWEntity("dragging", nil)
+
+		ply:ViewPunch(Angle(math.random(-10, 10), math.random(-10, 10), 0))
+
+		-- stop player from holding down the key
+		ply:SetAnimation(PLAYER_ATTACK1)
+
+		phys:Wake()
+
+		phys:EnableMotion(true)
+		phys:EnableGravity(true)
+		phys:ApplyForceCenter(ply:GetAimVector() * 10000000)
+		phys:ApplyTorqueCenter(ply:GetAimVector() * Vector(100000, 100000, 100000))
 	end
 end)
 
 hook.Add("StartCommand", "BodyDrag", function(ply, cmd)
+	if ! Enabled:GetBool() then return end
+
 	local ent = ply:GetNWEntity("dragging", nil)
 
 	if IsValid(ent) then
@@ -148,15 +157,15 @@ hook.Add("StartCommand", "BodyDrag", function(ply, cmd)
 	end
 end)
 
-hook.Add("KeyRelease", "BodyDrag", function(ply, key)
-	if key == IN_USE then
-		local ent = ply:GetNWEntity("dragging", nil)
+net.Receive("BD_Drop", function(len, ply)
+	if ! Enabled:GetBool() then return end
 
-		if IsValid(ent) then
-			ent:SetNWBool("dragging", false)
-			ent:SetNWEntity("owner", nil)
-			ply:SetNWEntity("dragging", nil)
-		end
+	local ent = ply:GetNWEntity("dragging", nil)
+
+	if IsValid(ent) then
+		ent:SetNWBool("dragging", false)
+		ent:SetNWEntity("owner", nil)
+		ply:SetNWEntity("dragging", nil)
 	end
 end)
 
@@ -168,6 +177,8 @@ end)
 -- 
 -- IF PICKUP SYSTEM BECOMES DEPRECATED, LEAVE THIS HERE
 hook.Add("Think", "BodyDrag", function()
+	if ! Enabled:GetBool() then return end
+
 	for k, v in pairs(ents.FindByClass("prop_ragdoll")) do
 		if v:GetNWBool("dragging", false) == true then
 			local owner = v:GetNWEntity("owner", nil)
@@ -204,6 +215,8 @@ hook.Add("Think", "BodyDrag", function()
 end)
 
 hook.Add("CreateEntityRagdoll", "BodyDrag", function(entity, ragdoll)
+	if ! Enabled:GetBool() then return end
+
 	ragdoll:SetNWBool("dragging", false)
 	ragdoll:SetNWEntity("owner", nil)
 end)

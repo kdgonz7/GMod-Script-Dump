@@ -198,6 +198,7 @@ net.Receive("BD_ThrowWithGrenade", function(len, ply)
 			grenade:SetAngles(ent:GetAngles())
 			grenade:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
 			grenade:SetModel("models/weapons/w_grenade.mdl")
+			grenade:SetPhysicsAttacker(ply)
 
 			grenade:Fire("SetTimer", 1, 0)
 			grenade:Spawn()

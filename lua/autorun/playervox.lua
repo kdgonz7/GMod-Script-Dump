@@ -39,6 +39,11 @@
 -- 'actions' is a key-value table in the PVox.Modules table. 
 -- It contains the pairs of actions, binded to their sound tables.
 -- depending on how many sounds you add, you can randomize the chances of certain sounds.
+--
+-- New in version v0.0.4 - there will potentially be a API upgrade, allowing
+-- developers to easily create sound packs by specifying an AutoCreate(),
+-- where it will essentially create the module code for you,
+-- and all you have to do is store the sounds in a certain order.
 
 if SERVER then
 	util.AddNetworkString("PVox_ChangePlayerPreset")
@@ -154,6 +159,43 @@ function PVox:ImplementModule(name, imp_func)
 	end
 
 	PVox.Modules[name] = imp_func()
+
+	note("loaded module " .. name)
+	note(tostring(PVox.Modules[name]))
+
+	if PVox.Modules[name] == true and name then	-- new in 0.4 - we create the module on the fly
+		PVox.Modules[name] = {}
+		PVox.Modules[name]["actions"] = {}
+
+		local module_folder = "pvox/" .. name -- sound/pvox/MODNAME will be used
+
+		note("creating module for " .. name)
+		local _,dirs = file.Find("sound/" .. module_folder .. "/actions/*", "GAME")
+
+		if ! dirs then
+			warn("structure incorrect. failed to create module")
+		end
+
+		for k, v in pairs(dirs) do
+			note("found module pack " .. v)
+
+			PVox.Modules[name]["actions"][v] = {}
+
+
+			local afiles,_ = file.Find("sound/" .. module_folder .. "/actions/" .. v .. "/*.wav", "GAME")
+
+			for _, v2 in pairs(afiles) do
+				PVox.Modules[name]["actions"][v][#PVox.Modules[name]["actions"][v] + 1] = module_folder .. "/actions/" .. v .. "/" .. v2
+			end
+		end
+
+		PrintTable(PVox.Modules[name])
+	end
+
+	if ! name then
+		warn("no name for module, skipping")
+		return
+	end
 
 	local m_name = PVox.Modules[name]["print_name"]
 
@@ -609,6 +651,12 @@ PVox:ImplementModule("cs2-phoenix", function(ply)
 				"playervox/modules/phoenix/radio_takingfire06.wav",
 			},
 
+			["take_damage_in_vehicle"] = {
+				"playervox/modules/phoenix/radio_takingfire01.wav",
+				"playervox/modules/phoenix/radio_takingfire02.wav",
+				"playervox/modules/phoenix/radio_takingfire03.wav",
+			},
+
 			["no_ammo"] = {},
 
 			["death"] = {
@@ -842,9 +890,13 @@ hook.Add("PlayerShouldTakeDamage", "PlayerVoxPlayerShouldTakeDamage", function(p
 	if playerPreset ~= "none" then
 		local mod = PVox:GetModule(playerPreset)
 		if ! mod then return end
+		local chance = math.random(1, 5) == 1
 
-		if math.random(1, 5) == 1 then
+		if ! ply:InVehicle() and chance then
 			mod:EmitAction(ply, "take_damage")
+		else
+			if ! chance then return end
+			mod:EmitAction(ply, "take_damage_in_vehicle")
 		end
 	end
 

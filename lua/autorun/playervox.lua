@@ -158,7 +158,9 @@ function PVox:ImplementModule(name, imp_func)
 		return
 	end
 
-	PVox.Modules[name] = imp_func()
+	PVox.Modules[name], ext = imp_func()
+
+	ext = ext or "wav"
 
 	note("loaded module " .. name)
 	note(tostring(PVox.Modules[name]))
@@ -182,7 +184,7 @@ function PVox:ImplementModule(name, imp_func)
 			PVox.Modules[name]["actions"][v] = {}
 
 
-			local afiles,_ = file.Find("sound/" .. module_folder .. "/actions/" .. v .. "/*.wav", "GAME")
+			local afiles,_ = file.Find("sound/" .. module_folder .. "/actions/" .. v .. "/*." .. ext, "GAME")
 
 			for _, v2 in pairs(afiles) do
 				PVox.Modules[name]["actions"][v][#PVox.Modules[name]["actions"][v] + 1] = module_folder .. "/actions/" .. v .. "/" .. v2

@@ -53,7 +53,7 @@ hook.Add("OnNPCKilled", "NTF_DetectKilledEntity", function (ent, attackerPLY, in
         if ! modul then return end
 
         timer.Simple(0.1, function()
-            modul:EmitAction(attackerPLY, "kill_zombie", true)
+            modul:EmitAction(attackerPLY, "kill_zombie")
         end)
     end
 end)

@@ -149,6 +149,10 @@ function PVox:Mount()
 	note("finished loading, found " .. c .. " modules.")
 end
 
+--* note: this mounts PVox modules (includes each file)
+--* this process isn't that complicated
+PVox:Mount()
+
 --* NOTE if you're using glualint,
 --* this entire section is a bunch of warnings. ignore them.
 --* this is for the PVOX class.
@@ -231,6 +235,10 @@ function PVox:ImplementModule(name, imp_func)
 		EmitAction = function(self, ply, action, override, new_time)
 			if ! IsValid(ply) then return end
 			if CLIENT then return end
+
+			if hook.Run("PVOX_EmitAction", ply, action, override, time) == false then
+				return
+			end
 
 			override = override or false
 			new_time = new_time or 0
@@ -318,6 +326,9 @@ function PVox:ImplementModule(name, imp_func)
 			self:PlaySoundSafe(ply, sound, 0)
 		end
 	}, false)
+
+	local addTo = hook.Run("PVOX_ModuleBaseClass", name)
+	table.Merge(PVox.Modules[name], addTo)
 end
 
 function PVox:GetModule(name)
@@ -379,10 +390,8 @@ function PVox:GenerateSimilarNames(amount, common_name, ext, zeroes, prefix)
 	local st = {}
 
 	for i = 1, amount do
-		if zeroes then
-			if i < 10 then
-				i = "0" .. i
-			end
+		if zeroes and i < 10 then
+			i = "0" .. i
 		end
 
 		local str = common_name .. prefix .. i .. "." .. ext
@@ -423,10 +432,6 @@ if SERVER then
 		player_Module:PlayCallout(ply, callout, true)
 	end)
 end
-
---* note: this mounts PVox modules (includes each file)
---* this process isn't that complicated
-PVox:Mount()
 
 --* these are the default modules.
 --* by default comes with Combine Soldier, CS2 SAS, and CS2 Phoenix Connexion voice lines.

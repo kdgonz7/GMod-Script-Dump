@@ -28,7 +28,7 @@ PVOX Hooks:
 
             You can also check for certain modules
 
-            hook.Add("PVOX_EmitAction", function(ply, action, override, _time)
+            hook.Add("PVOX_EmitAction", "PVOXOverride", function(ply, action, override, _time)
                 return action != "confirm_kill" -- disables the kill confirming module
             end)
 
@@ -37,7 +37,7 @@ PVOX Hooks:
         
         This function is where you can add custom sounds and modules to the base class.
 
-            hook.Add("PVOX_ModuleBaseClass", function(module_id)
+            hook.Add("PVOX_ModuleBaseClass", "MBC", function(module_id)
                 return {
                     ["always_Do"] = true
                 }

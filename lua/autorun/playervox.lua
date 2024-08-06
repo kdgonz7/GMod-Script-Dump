@@ -149,10 +149,6 @@ function PVox:Mount()
 	note("finished loading, found " .. c .. " modules.")
 end
 
---* note: this mounts PVox modules (includes each file)
---* this process isn't that complicated
-PVox:Mount()
-
 --* NOTE if you're using glualint,
 --* this entire section is a bunch of warnings. ignore them.
 --* this is for the PVOX class.
@@ -194,8 +190,8 @@ function PVox:ImplementModule(name, imp_func)
 				PVox.Modules[name]["actions"][v][#PVox.Modules[name]["actions"][v] + 1] = module_folder .. "/actions/" .. v .. "/" .. v2
 			end
 		end
-
-		PrintTable(PVox.Modules[name])
+		--* this is uncommented on Steam Workshop version
+		-- PrintTable(PVox.Modules[name])
 	end
 
 	if ! name then
@@ -287,7 +283,7 @@ function PVox:ImplementModule(name, imp_func)
 
 			ply.Emitting = true
 
-			ply:EmitSound(sound)
+			ply:EmitSound(sound, 511)
 
 			timer.Simple(time, function()
 				if ! IsValid(ply) then return end
@@ -433,6 +429,10 @@ if SERVER then
 		player_Module:PlayCallout(ply, callout, true)
 	end)
 end
+
+--* note: this mounts PVox modules (includes each file)
+--* this process isn't that complicated
+PVox:Mount()
 
 --* these are the default modules.
 --* by default comes with Combine Soldier, CS2 SAS, and CS2 Phoenix Connexion voice lines.

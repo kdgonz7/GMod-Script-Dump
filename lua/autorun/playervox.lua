@@ -327,7 +327,8 @@ function PVox:ImplementModule(name, imp_func)
 		end
 	}, false)
 
-	local addTo = hook.Run("PVOX_ModuleBaseClass", name)
+	local addTo = hook.Run("PVOX_ModuleBaseClass", name) or {}
+
 	table.Merge(PVox.Modules[name], addTo)
 end
 

@@ -37,10 +37,9 @@ net.Receive("BD_Start", function(len, ply)
 	})
 
 	if GrabWhileAlive:GetBool() then
-		if (ps.Entity != nil and ps.Entity:GetClass() != "prop_ragdoll" and string.StartsWith(ps.Entity:GetClass(), "npc_")) and ! EntBlacklist[ps.Entity:GetClass()] then
+		if (IsValid(ps.Entity) and ps.Entity:GetClass() != "prop_ragdoll" and string.StartsWith(ps.Entity:GetClass(), "npc_")) and ! EntBlacklist[ps.Entity:GetClass()] then
 			if ps.Entity:Health() <= 0 then return end
 
-			print(ps.Entity:GetClass())
 			-- ragdolify the entity
 			local rag = ents.Create("prop_ragdoll")
 			rag:SetModel(ps.Entity:GetModel())

@@ -30,7 +30,11 @@ net.Receive("BD_Start", function(len, ply)
 
 	if ply:GetNWBool("dragging", false) then return end
 
-	local ps = ply:GetEyeTrace()
+	local ps = util.TraceLine({
+		start = ply:EyePos(),
+		endpos = ply:EyePos() + ply:EyeAngles():Forward() * 100,
+		filter = ply
+	})
 
 	if GrabWhileAlive:GetBool() then
 		if (ps.Entity != nil and ps.Entity:GetClass() != "prop_ragdoll" and string.StartsWith(ps.Entity:GetClass(), "npc_")) and ! EntBlacklist[ps.Entity:GetClass()] then

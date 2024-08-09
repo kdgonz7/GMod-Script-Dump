@@ -22,14 +22,22 @@
 -- and it will show up in the menu. Once played, it will play the VOX audio for that callout.
 --
 -- Built-in modules:
---    * "reload"						called on reload
---    * "enemy_spotted"			called when aiming at an enemy
---    * "enemy_killed"			called when an enemy is killed
---    * "take_damage"				called when a player takes damage ( 1 in 5 chance )
---    * "no_ammo"						called when a player runs out of ammo
---    * "confirm_kill"			called when an enemy is confirmed to be killed (shot at dead body)
---		* "death"							called when a player dies (not required)
---		* "on_ready"					called when a player spawns
+--	* "reload"					called on reload
+--	* "enemy_spotted"			called when aiming at an enemy
+--	* "enemy_killed"			called when an enemy is killed
+--	* "take_damage"				called when a player takes damage ( 1 in 5 chance )
+--	* "no_ammo"					called when a player runs out of ammo
+--	* "confirm_kill"			called when an enemy is confirmed to be killed (shot at dead body)
+--	* "death"					called when a player dies (not required)
+--	* "on_ready"				called when a player spawns
+--	* "pickup_weapon"			called when a player picks up a weapon. This takes priority over on_ready, so add your on_ready files into this instead.
+--	* "inspect"					called when the key `F` is pressed.
+--	* "take_damage_in_vehicle"	called when the player takes damage in a vehicle.
+--
+-- Unnecessary/Potentially Deprecated Modules:
+--
+--	* "switchtaunt"				called when a player switches their weapon.
+--	* 
 --
 -- 100% inspired by TFA-VOX, thanks for the playermodel-based preset ideas.
 --
@@ -293,8 +301,6 @@ function PVox:ImplementModule(name, imp_func)
 
 		PlayCallout = function(self, ply, callout, override)
 			if ! IsValid(ply) then return end
-			if ! PVox.Modules[name]["callouts"] then return end
-
 			if ! override and self:IsEmitting(ply) then
 				return
 			else
@@ -621,6 +627,14 @@ PVox:ImplementModule("cs2-phoenix", function(ply)
 				"playervox/modules/phoenix/taunt/radio_needbackup05.wav",
 				"playervox/modules/phoenix/taunt/radio_needbackup06.wav",
 			},
+
+			["Need Help 2"] = {
+				"playervox/modules/phoenix/taunt/radio_needbackup01.wav",
+				"playervox/modules/phoenix/taunt/radio_needbackup02.wav",
+				"playervox/modules/phoenix/taunt/radio_needbackup03.wav",
+				"playervox/modules/phoenix/taunt/radio_needbackup05.wav",
+				"playervox/modules/phoenix/taunt/radio_needbackup06.wav",
+			},
 		},
 		["actions"] = {
 			["on_ready"] = {
@@ -806,6 +820,40 @@ hook.Add("PlayerCanPickupWeapon", "PlayerVoxPickupSound", function(ply, wep)
 
 	return true
 end)
+
+-- hook.Add("WeaponEquip", "W", function(wep, own)
+-- 	wep.RanOG = false
+-- 	wep.Reload = function (self)
+-- 		if ! self.RanOG then
+-- 			self.RanOG = true
+-- 			self:Reload()
+-- 		end
+
+-- 		print("ran reload")
+
+-- 		-- if we already have enough,
+-- 		-- stop spamming
+
+-- 		if ! IsValid(wep) then
+-- 			warn("tried to call built-in module reload with no active weapon. non-fatal.")
+-- 			return
+-- 		end
+
+-- 		if wep:Clip1() >= wep:GetMaxClip1() then return end
+
+-- 		-- play the reload VOX from the player's preset
+-- 		local playerPreset = own:GetNWString("vox_preset", "none")
+
+-- 		if playerPreset ~= "none" then
+-- 			local mod = PVox:GetModule(playerPreset)
+
+-- 			if mod then
+-- 				if own:GetAmmoCount(wep:GetPrimaryAmmoType()) == 0 then mod:EmitAction(ply, "no_ammo") return end
+-- 				mod:EmitAction(ply, "reload")
+-- 			end
+-- 		end
+-- 	end
+-- end)
 
 hook.Add("KeyPress", "PlayerVoxDefaults", function(ply, key)
 	if ! PVoxEnabled:GetBool() then return end

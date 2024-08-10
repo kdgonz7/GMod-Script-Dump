@@ -37,7 +37,6 @@
 -- Unnecessary/Potentially Deprecated Modules:
 --
 --	* "switchtaunt"				called when a player switches their weapon.
---	* 
 --
 -- 100% inspired by TFA-VOX, thanks for the playermodel-based preset ideas.
 --
@@ -127,6 +126,8 @@ function PVox:ModuleIsBlackListed(modu)
 end
 
 function PVox:RegisterPlayerModel(model, modu)
+	if ! modu or ! model then return end
+
 	PVox.PlayerModelBinds[model] = modu
 	note("bound " .. model .. " to " .. modu)
 end
@@ -276,6 +277,10 @@ function PVox:ImplementModule(name, imp_func)
 
 			local rand_sound = action_soundtable[math.random(1, #action_soundtable)]
 			local dur = SoundDuration(rand_sound)
+
+			if dur == 60 then
+				dur = 0.5
+			end
 
 			timer.Simple(0, function()
 				self:SetCachedSound(ply, rand_sound)
